@@ -1,7 +1,7 @@
 ## Задача 1. Генерация никнеймов
 
-1. [Cложное решение](difficult_decision/src/task_1).
-2. [Обычное решение](usual_solution/src/task_1).
+1. [Cложное решение](difficult_decision/src/task_1/NicknameGenerator.java).
+2. [Обычное решение](usual_solution/src/task_1/NicknameGenerator.java).
 
 ### Описание
 
