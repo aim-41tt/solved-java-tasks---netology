@@ -1,88 +1,47 @@
 package task_1;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 public class NicknameGenerator {
 
+    // Статические счетчики для "красивых" слов длиной 3, 4 и 5
     private static final AtomicInteger count3 = new AtomicInteger(0);
     private static final AtomicInteger count4 = new AtomicInteger(0);
     private static final AtomicInteger count5 = new AtomicInteger(0);
 
-    public static void main(String[] args) throws InterruptedException {
-        Random random = new Random();
-        String[] texts = new String[100_000];
-
-        // Генерация текстов
-        for (int i = 0; i < texts.length; i++) {
-            texts[i] = generateText("abc", 3 + random.nextInt(3));
-        }
-
-        // Список условий "красоты"
-        List<Predicate<String>> conditions = new ArrayList<>();
-        conditions.add(NicknameGenerator::isPalindrome);
-        conditions.add(NicknameGenerator::isSameLetters);
-        conditions.add(NicknameGenerator::isIncreasing);
-
-        // Создание и запуск потоков
-        List<Thread> threads = new ArrayList<>();
-        for (Predicate<String> condition : conditions) {
-            Thread thread = new Thread(() -> {
-                for (String text : texts) {
-                    if (condition.test(text)) {
-                        updateCount(text);
-                    }
-                }
-            });
-            thread.start();
-            threads.add(thread);
-        }
-
-        // Ожидание завершения всех потоков
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        // Вывод результатов
-        System.out.printf("Красивых слов с длиной 3: %d шт%n", count3.get());
-        System.out.printf("Красивых слов с длиной 4: %d шт%n", count4.get());
-        System.out.printf("Красивых слов с длиной 5: %d шт%n", count5.get());
-    }
-
     // Метод генерации случайного текста
     public static String generateText(String letters, int length) {
         Random random = new Random();
-        StringBuilder text = new StringBuilder(length);
+        StringBuilder text = new StringBuilder();
         for (int i = 0; i < length; i++) {
             text.append(letters.charAt(random.nextInt(letters.length())));
         }
         return text.toString();
     }
 
-    // Метод для увеличения соответствующего счетчика в зависимости от длины текста
-    private static void updateCount(String text) {
-        switch (text.length()) {
-            case 3 -> count3.incrementAndGet();
-            case 4 -> count4.incrementAndGet();
-            case 5 -> count5.incrementAndGet();
-        }
-    }
-
-    // Проверка на палиндром
+    // Метод проверки на палиндром
     public static boolean isPalindrome(String text) {
-        return new StringBuilder(text).reverse().toString().equals(text);
+        int n = text.length();
+        for (int i = 0; i < n / 2; i++) {
+            if (text.charAt(i) != text.charAt(n - i - 1)) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    // Проверка на одинаковые буквы
+    // Метод проверки на одинаковые буквы
     public static boolean isSameLetters(String text) {
         char firstChar = text.charAt(0);
-        return text.chars().allMatch(c -> c == firstChar);
+        for (int i = 1; i < text.length(); i++) {
+            if (text.charAt(i) != firstChar) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    // Проверка на возрастающую последовательность букв
+    // Метод проверки на возрастающую последовательность букв
     public static boolean isIncreasing(String text) {
         for (int i = 1; i < text.length(); i++) {
             if (text.charAt(i) < text.charAt(i - 1)) {
@@ -90,5 +49,69 @@ public class NicknameGenerator {
             }
         }
         return true;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Random random = new Random();
+        String[] texts = new String[100_000];
+        
+        // Генерация текстов
+        for (int i = 0; i < texts.length; i++) {
+            texts[i] = generateText("abc", 3 + random.nextInt(3));
+        }
+
+        // Поток проверки на палиндром
+        Thread palindromeThread = new Thread(() -> {
+            for (String text : texts) {
+                if (isPalindrome(text)) {
+                    updateCount(text);
+                }
+            }
+        });
+
+        // Поток проверки на одинаковые буквы
+        Thread sameLettersThread = new Thread(() -> {
+            for (String text : texts) {
+                if (isSameLetters(text)) {
+                    updateCount(text);
+                }
+            }
+        });
+
+        // Поток проверки на возрастающую последовательность букв
+        Thread increasingThread = new Thread(() -> {
+            for (String text : texts) {
+                if (isIncreasing(text)) {
+                    updateCount(text);
+                }
+            }
+        });
+
+        // Запуск потоков
+        palindromeThread.start();
+        sameLettersThread.start();
+        increasingThread.start();
+
+        // Ожидание завершения всех потоков
+        palindromeThread.join();
+        sameLettersThread.join();
+        increasingThread.join();
+
+        // Вывод результатов
+        System.out.println("Красивых слов с длиной 3: " + count3.get() + " шт");
+        System.out.println("Красивых слов с длиной 4: " + count4.get() + " шт");
+        System.out.println("Красивых слов с длиной 5: " + count5.get() + " шт");
+    }
+
+    // Метод для увеличения соответствующего счетчика в зависимости от длины текста
+    private static void updateCount(String text) {
+        int length = text.length();
+        if (length == 3) {
+            count3.incrementAndGet();
+        } else if (length == 4) {
+            count4.incrementAndGet();
+        } else if (length == 5) {
+            count5.incrementAndGet();
+        }
     }
 }
